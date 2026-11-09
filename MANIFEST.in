@@ -1,0 +1,3 @@
+include README.md VERSION
+recursive-include src *.py *.ini *.mako
+global-exclude __pycache__ *.py[cod]
