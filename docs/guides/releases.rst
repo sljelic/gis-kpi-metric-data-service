@@ -2,7 +2,7 @@ Git flow and releases
 =====================
 
 Use feature branches -> integration -> release branches -> production.
-GitHub and Gitea validate tests, PostgreSQL migration lifecycle, wheel resources
+GitHub and Gitea validate tests, wheel installation
 and full HTML/PDF documentation. Only Gitea production releases after all checks.
 Conventional Commit fix/feat/breaking messages select patch/minor/major versions.
 

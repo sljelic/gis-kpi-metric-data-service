@@ -64,9 +64,3 @@ Services
 
 .. automodule:: gis_kpi_metric_data_service.services.metric
    :members: MetricService
-
-Migration CLI
--------------
-
-.. automodule:: gis_kpi_metric_data_service.cli
-   :members:

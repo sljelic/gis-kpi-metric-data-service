@@ -1,1 +1,1 @@
-"""GIS KPI persistence models, schemas, services and migration history."""
+"""GIS KPI persistence models, schemas, and services."""

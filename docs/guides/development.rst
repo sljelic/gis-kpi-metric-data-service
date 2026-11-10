@@ -13,11 +13,8 @@ Run::
     make html
     make pdf
 
-Set TEST_POSTGRES_URL to an empty disposable PostgreSQL database to run the
-migration lifecycle test. It upgrades from base, verifies metadata parity,
-retains existing rows across a repeated 0001 upgrade, tests downgrade and
-re-upgrade, and cleans up its tables. SQLite tests exercise service behavior.
-The migration-resource test also generates a new revision in a temporary copy.
+SQLite tests exercise service behavior. PostgreSQL migration lifecycle tests
+run in the jobs repository.
 
 PDF uses SimplePDF/WeasyPrint and needs Pango plus fonts on the host (Debian:
 libpango-1.0-0, libpangoft2-1.0-0, fonts-dejavu-core). Outputs are not tracked.

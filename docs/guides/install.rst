@@ -14,10 +14,9 @@ Ownership:
 * ``gis_kpi_metric_data_service.models``: SQLAlchemy models and metadata.
 * ``gis_kpi_metric_data_service.schemas``: Pydantic DTOs.
 * ``gis_kpi_metric_data_service.services``: session-scoped data services.
-* ``gis_kpi_metric_data_service/migrations``: packaged Alembic revision history.
 * ``issue-metric-calculator``: calculation strategies using these DTOs.
 * ``gis-kpi-metric-jobs``: deployed DAG files, helpers and SQL resources.
-* ``gis-kpi-metric-db``: deployment configuration and migration invocation.
+* ``gis-kpi-metric-db``: deployment configuration.
 
 This package has no dependency on Airflow or the calculator. The calculator
 must depend on this package, not the other way around. Update consumers to
