@@ -62,3 +62,13 @@ Inspect history/current and back up data before rollback::
 Downgrading the initial revision drops the application tables and data.
 ``stamp`` only changes revision bookkeeping; use it only after confirming that
 an existing unmanaged schema exactly matches the selected revision.
+
+Ownership and execution
+-----------------------
+
+Migration definitions are versioned with the models in this library, so a
+released library carries its matching schema history. The database deployment
+repository owns credentials and explicitly runs upgrades once per rollout.
+Package installation, imports and ordinary service calls never run migrations.
+Model/schema/service module refactoring does not require a new schema revision;
+revision 0001 and its existing database bookkeeping remain unchanged.

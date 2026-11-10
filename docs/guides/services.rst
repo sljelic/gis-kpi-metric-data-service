@@ -18,3 +18,25 @@ Metric snapshots are unique by issue_id, title and datetime_calculated.
 MetricService.create reuses that snapshot on retry. Supply the same UTC
 calculation timestamp for retries; later runs retain history. CalendarService
 uses full local holiday dates, including DST days.
+
+Module boundaries
+-----------------
+
+Schemas are defined in schemas/base.py, issue.py, progression.py, extension.py,
+holiday.py and metric.py. Services are defined in services/base.py, issue.py,
+calendar.py and metric.py. ORM models already have entity/data-source modules.
+Package __init__.py files expose public names through re-exports and __all__;
+they contain no service or validation implementations.
+
+Existing imports continue to work::
+
+    from gis_kpi_metric_data_service.schemas import Issue
+    from gis_kpi_metric_data_service.services import IssueService
+
+Direct module imports are also supported::
+
+    from gis_kpi_metric_data_service.schemas.issue import Issue
+    from gis_kpi_metric_data_service.services.issue import IssueService
+
+Services retain their existing names and CRUD API. Their database-query role is
+unchanged, and the caller continues to own commit/rollback and session lifetime.
