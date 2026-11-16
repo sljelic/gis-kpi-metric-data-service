@@ -54,3 +54,20 @@ model expose nullable issue_id; no local-issue foreign key is required.
 metrics. Install its physical view using jobs Alembic, then query it with
 ``session.scalars(select(IssuesWithMetrics))``. It is excluded from table metadata
 so create_all/autogeneration cannot accidentally create a table in its place.
+
+Date-based holidays
+-------------------
+
+Holiday models and schemas contain only ``title``, ``year`` and ``date``.
+The composite primary key is ``(title, year)``; ``year`` must match the date.
+``CalendarService.create(holiday)`` atomically upserts by that key, updating the
+date on retry. ``getById``, ``update`` and ``delete`` take ``(title, year)``.
+The caller owns the transaction. Renaming requires delete/recreate.
+CSV imports use ``title,year,date`` without an ID. Run the jobs repository's
+Alembic migration before using this version against an existing database.
+
+``Holiday.interval_bounds(timezone)`` derives midnight on the date and midnight
+the following day in the requested timezone (Pacific/Auckland by default).
+``datetime_from`` and ``datetime_to`` are read-only derived compatibility
+properties, excluded from schema serialization and database storage. DST days can
+last 23 or 25 hours. No endpoint is accepted from CSV or constructor input.

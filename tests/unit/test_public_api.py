@@ -72,3 +72,22 @@ def test_timezone_validation_still_applies_through_public_exports():
         datetime_calculated=datetime(2026, 1, 1, tzinfo=timezone.utc),
     )
     assert metric.datetime_calculated.tzinfo is not None
+
+
+@pytest.mark.parametrize("day,hours", [("2026-04-05", 25), ("2026-09-27", 23)])
+def test_holiday_date_contract_and_dst(day, hours):
+    from gis_kpi_metric_data_service.schemas import Holiday
+
+    holiday = Holiday(title="DST", year=2026, date=day)
+    assert set(holiday.model_dump()) == {"title", "year", "date"}
+    start, end = holiday.interval_bounds()
+    assert end.timestamp() - start.timestamp() == hours * 3600
+    start, end = holiday.interval_bounds("UTC")
+    assert end.timestamp() - start.timestamp() == 86400
+    assert start.date() == holiday.date
+    with pytest.raises(ValidationError):
+        Holiday(title="Wrong year", year=2025, date=day)
+    with pytest.raises(ValidationError):
+        Holiday(title="ID forbidden", year=2026, date=day, id=1)
+    with pytest.raises(ValidationError):
+        Holiday(title="Endpoints forbidden", year=2026, date=day, datetime_from=start)

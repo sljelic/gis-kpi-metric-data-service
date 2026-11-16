@@ -1,8 +1,10 @@
-"""CalendarService database queries and schema conversion."""
+"""Idempotent calendar operations keyed by (title, year)."""
 
-from datetime import datetime, time, timedelta
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from ..models.accelo.holidays import Holiday as HolidayModel
 from ..schemas.holiday import Holiday
 from .base import CRUDService
@@ -16,54 +18,63 @@ class CalendarService(CRUDService):
         self.zone = ZoneInfo(timezone)
 
     def _schema(self, obj):
-        day = datetime.fromtimestamp(obj.date, self.zone).date()
-        return Holiday(
-            id=obj.id,
-            title=obj.title,
-            datetime_from=datetime.combine(day, time(), self.zone),
-            datetime_to=datetime.combine(day + timedelta(days=1), time(), self.zone),
-        )
+        return Holiday.model_validate(obj)
 
-    def getById(self, id):
-        obj = self.session.get(self.model, id)
+    def getById(self, key):
+        """Read by the composite (title, year) primary key."""
+        obj = self.session.get(self.model, key)
         return self._schema(obj) if obj is not None else None
+
+    def _date(self, value):
+        if isinstance(value, datetime):
+            if value.tzinfo is None:
+                raise ValueError("Holiday filter datetime must include a timezone")
+            return value.astimezone(self.zone).date()
+        if isinstance(value, date):
+            return value
+        return datetime.fromtimestamp(value, self.zone).date()
 
     def get(self, year=None, after=None, before=None, titles=None):
         stmt = select(self.model)
         if year is not None:
-            stmt = stmt.where(
-                self.model.date
-                >= int(datetime(year, 1, 1, tzinfo=self.zone).timestamp()),
-                self.model.date
-                < int(datetime(year + 1, 1, 1, tzinfo=self.zone).timestamp()),
-            )
+            stmt = stmt.where(self.model.year == year)
         if after is not None:
-            stmt = stmt.where(
-                self.model.date >= int(after.timestamp())
-                if isinstance(after, datetime)
-                else self.model.date >= after
-            )
+            stmt = stmt.where(self.model.date >= self._date(after))
         if before is not None:
-            stmt = stmt.where(
-                self.model.date < int(before.timestamp())
-                if isinstance(before, datetime)
-                else self.model.date < before
-            )
+            stmt = stmt.where(self.model.date < self._date(before))
         if titles is not None:
             stmt = stmt.where(self.model.title.in_(titles))
         return [
             self._schema(o)
-            for o in self.session.scalars(stmt.order_by(self.model.date, self.model.id))
+            for o in self.session.scalars(
+                stmt.order_by(self.model.date, self.model.title)
+            )
         ]
 
     def create(self, holiday):
-        return self.update(holiday.id, holiday)
-
-    def update(self, id, holiday):
-        obj = self._save(
-            id,
-            dict(
-                id=id, title=holiday.title, date=int(holiday.datetime_from.timestamp())
-            ),
+        """Upsert without a CSV ID; retries and concurrent imports are safe."""
+        holiday = Holiday.model_validate(holiday)
+        values = holiday.model_dump()
+        dialect = self.session.get_bind().dialect.name
+        insert = {"postgresql": pg_insert, "sqlite": sqlite_insert}.get(dialect)
+        if insert is None:
+            raise NotImplementedError("Calendar upsert requires PostgreSQL or SQLite")
+        stmt = insert(self.model).values(**values)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[self.model.title, self.model.year],
+            set_={"date": stmt.excluded.date},
+        )
+        self.session.execute(stmt)
+        self.session.flush()
+        obj = self.session.get(
+            self.model, (holiday.title, holiday.year), populate_existing=True
         )
         return self._schema(obj)
+
+    def update(self, key, holiday):
+        holiday = Holiday.model_validate(holiday)
+        if tuple(key) != (holiday.title, holiday.year):
+            raise ValueError(
+                "Holiday title/year identify the record; delete and recreate to rename"
+            )
+        return self.create(holiday)

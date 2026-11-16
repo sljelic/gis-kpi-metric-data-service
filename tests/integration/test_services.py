@@ -3,7 +3,11 @@ import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 from gis_kpi_metric_data_service import models as m, schemas as s
-from gis_kpi_metric_data_service.services import CalendarService, IssueService, MetricService
+from gis_kpi_metric_data_service.services import (
+    CalendarService,
+    IssueService,
+    MetricService,
+)
 
 
 @pytest.fixture
@@ -101,16 +105,17 @@ def test_calendar_crud_filters_and_local_day(session):
     from zoneinfo import ZoneInfo
 
     zone = ZoneInfo("Pacific/Auckland")
-    holiday = s.Holiday(
-        id=1,
-        title="Test",
-        datetime_from=datetime(2026, 4, 5, tzinfo=zone),
-        datetime_to=datetime(2026, 4, 6, tzinfo=zone),
-    )
+    holiday = s.Holiday(title="Test", year=2026, date="2026-04-05")
+    service.create(holiday)
     service.create(holiday)
     obj = service.get(year=2026, titles=["Test"])[0]
+    assert len(service.get()) == 1
     assert obj.datetime_to.timestamp() - obj.datetime_from.timestamp() == 25 * 3600
     assert service.get(year=2025) == []
-    service.update(1, holiday.model_copy(update={"title": "Changed"}))
-    assert service.getById(1).title == "Changed"
-    assert service.delete(1)
+    updated = s.Holiday(title="Test", year=2026, date="2026-04-06")
+    service.update(("Test", 2026), updated)
+    assert service.getById(("Test", 2026)).date.isoformat() == "2026-04-06"
+    service.create(s.Holiday(title="Test", year=2027, date="2027-04-05"))
+    assert len(service.get()) == 2
+    assert len(service.get(after=datetime(2027, 1, 1, tzinfo=zone))) == 1
+    assert service.delete(("Test", 2026))
