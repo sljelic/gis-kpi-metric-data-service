@@ -8,7 +8,10 @@ from .accelo.holidays import Holiday
 from .adms.incident import Incident
 from .metrics import Metric
 
+from .views import IssuesWithMetrics
+
 __all__ = [
+    "IssuesWithMetrics",
     "Base",
     "Issue",
     "ExtensionValue",

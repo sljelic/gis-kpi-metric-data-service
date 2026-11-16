@@ -7,4 +7,14 @@ from .issue import Issue
 from .metric import Metric
 from .progression import Progression
 
-__all__ = ["Schema", "Holiday", "Progression", "Extension", "Issue", "Metric"]
+from .incident import Incident
+
+__all__ = [
+    "Incident",
+    "Schema",
+    "Holiday",
+    "Progression",
+    "Extension",
+    "Issue",
+    "Metric",
+]

@@ -40,3 +40,17 @@ Direct module imports are also supported::
 
 Services retain their existing names and CRUD API. Their database-query role is
 unchanged, and the caller continues to own commit/rollback and session lifetime.
+
+
+ADMS incident linkage
+---------------------
+
+``IncidentService.mark_ingested(id, issue_id, created_at=None)`` updates the remote
+ID and ingestion timestamp within the caller's transaction. Existing timestamps
+are retained, and conflicting issue IDs are rejected. The Incident schema and ORM
+model expose nullable issue_id; no local-issue foreign key is required.
+
+``models.views.IssuesWithMetrics`` is a read-only ORM view with latest pivoted
+metrics. Install its physical view using jobs Alembic, then query it with
+``session.scalars(select(IssuesWithMetrics))``. It is excluded from table metadata
+so create_all/autogeneration cannot accidentally create a table in its place.

@@ -5,4 +5,12 @@ from .calendar import CalendarService
 from .issue import IssueService
 from .metric import MetricService
 
-__all__ = ["CRUDService", "CalendarService", "IssueService", "MetricService"]
+from .incident import IncidentService
+
+__all__ = [
+    "IncidentService",
+    "CRUDService",
+    "CalendarService",
+    "IssueService",
+    "MetricService",
+]

@@ -7,6 +7,7 @@ class Incident(Base):
     __tablename__ = "incident"
     __table_args__ = (UniqueConstraint("title"), {"schema": "adms"})
     incident_id = mapped_column(BigInteger, primary_key=True, autoincrement=False)
+    issue_id = mapped_column(BigInteger, nullable=True)
     title = mapped_column(String, nullable=False)
     type_id = mapped_column(BigInteger, nullable=False)
     against_type = mapped_column(String, nullable=False)
